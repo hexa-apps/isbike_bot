@@ -1,7 +1,9 @@
 require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
+const turf = require("@turf/turf");
 
 const token = process.env.TOKEN;
+const apiUrl = process.env.URL;
 
 const bot = new TelegramBot(token, { polling: true });
 
@@ -22,6 +24,7 @@ bot.on("message", (msg) => {
   const chatId = msg.chat.id;
   let message = "Received your message";
   if (msg.location) {
+    var targetPoint = turf.point([msg.location.longitude, msg.location.latitude]);
     message = `${msg.location.latitude}, ${msg.location.longitude}`;
   }
 
