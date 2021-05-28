@@ -24,26 +24,45 @@ bot.onText(/\/echo (.+)/, (msg, match) => {
 bot.on("message", (msg) => {
   const chatId = msg.chat.id;
   let message = "Received your message";
-  fetch(apiUrl)
-    .then((res) => res.json())
-    .then((json) => {
-      var targetPoint = {
-        longitude: msg.location.longitude,
-        latitude: msg.location.latitude,
-      };
-      var stations = stationsList(json.dataList);
-      var nearest = geolib.findNearest(targetPoint, stations);
-      message = `İstasyon: ${nearest.name}\nDoluluk: ${nearest.filled}/${
-        parseInt(nearest.filled) + parseInt(nearest.empty)
-      }\n\nhttps://www.google.com/maps/search/?api=1&query=${parseFloat(
-        nearest.latitude
-      )},${parseFloat(nearest.longitude)}`;
-      bot.sendMessage(chatId, message);
-    });
-
-  // send a message to the chat acknowledging receipt of their message
-  // bot.sendMessage(chatId, message);
+  if (msg.location) {
+    fetch(apiUrl)
+      .then((res) => res.json())
+      .then((json) => {
+        var targetPoint = {
+          longitude: msg.location.longitude,
+          latitude: msg.location.latitude,
+        };
+        var stations = stationsList(json.dataList);
+        var nearest = geolib.findNearest(targetPoint, stations);
+        var lastConnectionCompare =
+          new Date() - new Date(nearest.last_connection);
+        var timeCompare = timeAgo(lastConnectionCompare);
+        message = `İstasyon: ${nearest.name}\nDoluluk: ${nearest.filled}/${
+          parseInt(nearest.filled) + parseInt(nearest.empty)
+        }\nSon Bağlantı: ${timeCompare}\n\nhttps://www.google.com/maps/search/?api=1&query=${parseFloat(
+          nearest.latitude
+        )},${parseFloat(nearest.longitude)}`;
+        bot.sendMessage(chatId, message);
+      });
+  } else {
+    message = "En yakın istasyonu öğrenmek için lütfen konumunuzu paylaşın";
+    bot.sendMessage(chatId, message);
+  }
 });
+
+function timeAgo(millisecond) {
+  var timeCompare = "";
+  if (millisecond / (1000 * 60 * 60 * 24) >= 1) {
+    timeCompare = `${parseInt(millisecond / (1000 * 60 * 60 * 24))} gün önce`;
+  } else if (millisecond / (1000 * 60 * 60) >= 1) {
+    timeCompare = `${parseInt(millisecond / (1000 * 60 * 60))} sa önce`;
+  } else if (millisecond / (1000 * 60) >= 1) {
+    timeCompare = `${parseInt(millisecond / (1000 * 60))} dk önce`;
+  } else {
+    timeCompare = `${parseInt(millisecond / 1000)} sn önce`;
+  }
+  return timeCompare;
+}
 
 function stationsList(data) {
   var stations = [];
