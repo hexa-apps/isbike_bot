@@ -33,6 +33,11 @@ bot.on("message", (msg) => {
       };
       var stations = stationsList(json.dataList);
       var nearest = geolib.findNearest(targetPoint, stations);
+      message = `İstasyon: ${nearest.name}\nDoluluk: ${nearest.filled}/${
+        parseInt(nearest.filled) + parseInt(nearest.empty)
+      }\n\nhttps://www.google.com/maps/search/?api=1&query=${parseFloat(
+        nearest.latitude
+      )},${parseFloat(nearest.longitude)}`;
       bot.sendMessage(chatId, message);
     });
 
@@ -53,6 +58,12 @@ function stationsList(data) {
           latitude: station.lat,
           longitude: station.lon,
           name: station.adi,
+          id: station.guid,
+          station_no: station.istasyon_no,
+          is_active: station.aktif,
+          empty: station.bos,
+          filled: station.dolu,
+          last_connection: station.sonBaglanti,
         });
       }
     });
