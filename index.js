@@ -1,6 +1,7 @@
 require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
-const turf = require("@turf/turf");
+const fetch = require("node-fetch");
+const geolib = require("geolib");
 
 const token = process.env.TOKEN;
 const apiUrl = process.env.URL;
@@ -23,11 +24,38 @@ bot.onText(/\/echo (.+)/, (msg, match) => {
 bot.on("message", (msg) => {
   const chatId = msg.chat.id;
   let message = "Received your message";
-  if (msg.location) {
-    var targetPoint = turf.point([msg.location.longitude, msg.location.latitude]);
-    message = `${msg.location.latitude}, ${msg.location.longitude}`;
-  }
+  fetch(apiUrl)
+    .then((res) => res.json())
+    .then((json) => {
+      var targetPoint = {
+        longitude: msg.location.longitude,
+        latitude: msg.location.latitude,
+      };
+      var stations = stationsList(json.dataList);
+      var nearest = geolib.findNearest(targetPoint, stations);
+      bot.sendMessage(chatId, message);
+    });
 
   // send a message to the chat acknowledging receipt of their message
-  bot.sendMessage(chatId, message);
+  // bot.sendMessage(chatId, message);
 });
+
+function stationsList(data) {
+  var stations = [];
+  if (data && data.length > 0) {
+    data.forEach((station) => {
+      if (
+        station.lat.length > 0 &&
+        station.lon.length > 0 &&
+        station.aktif == 1
+      ) {
+        stations.push({
+          latitude: station.lat,
+          longitude: station.lon,
+          name: station.adi,
+        });
+      }
+    });
+  }
+  return stations;
+}
